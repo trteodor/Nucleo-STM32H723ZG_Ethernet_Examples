@@ -1,0 +1,221 @@
+<!DOCTYPE HTML><html lang="pl">
+<head>
+  <title>STM32_ajaxDemo</title>
+  <!-- <meta http-equiv="refresh" content ="5"> -->
+  <link rel="icon" href="data:,">
+  <style>
+  html {
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: center;
+  }
+  h1 {
+    font-size: 1.6rem;
+    color: white;
+  }
+  h2{
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #143642;
+  }
+  h3{
+    font-size: 1rem;
+    font-weight: bold;
+    color: #000000;
+  }
+  .ucTimeClass{
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #00ff11;
+   }
+  
+  .TopHeader {
+    overflow: hidden;
+    background-color: #7da9d5;
+  }
+  body {
+    margin: 0;
+  }
+  .content {
+    padding: 3px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .card {
+    background-color: #F8F7F9;;
+    padding-top:5px;
+    padding-bottom:5px;
+  }
+  
+  .image {
+    padding-top:50px;
+    padding-bottom:50px;
+    margin: 30px 30px 30px 30px;
+  }
+
+  .ButtonSend{
+	   width: 200px;
+	   background-color:#71df56;
+	   border: none;
+	   color: white;
+	   padding: 7px 20px;
+	   text-decoration: none;
+	   font-size: 25px;
+	   margin: 7px 7px 7px 7px;
+	   cursor: pointer;
+	   border-radius: 4px;
+       position: center;
+  }
+
+  .largerCheckbox {
+            width: 40px;
+            height: 40px;
+        }
+
+   .state {
+     font-size: 1.5rem;
+     color:#8c8c8c;
+     font-weight: bold;
+   }
+  </style>
+
+
+<body>
+
+</head>
+<body>
+  <body onload = "updatePlotWithAjax()"></body>
+
+  <div class="TopHeader">
+    <h1> Simple webPage hosted on STM32F767 </h1>
+    <h1> Demo: Dynamic data update with ajax! </h1>
+  </div>
+    <h1> using LWiP rawApi (SSI+CGI) </h1>
+
+  <div class="content">
+
+    <div class="card">
+    <form method="get" action="/leds.cgi">
+    <table style="width:100%"></table>
+    <tr>
+      <h2>MCU RunTime_mSec:</h2>
+      <h2 class="ucTimeClass" id="TimeSlot1"><!--#tag1_ucT--></h2>
+      <h2>Led 1 state:</h2>
+      <h2 class="Ld1_Class"><!--#tag2_Ld1--></h2>
+      <h2>Led 2 state:</h2>
+      <h2 class="Ld1_Class"><!--#tag3_Ld2--></h2>
+    </tr>
+      <input value="Send" type="submit" class="ButtonSend">
+    </table>
+    </form>
+    <br>
+    <button class="button" onclick = "updatePlotWithAjax()">updatePlotWithAjax</button>
+    <br>
+    Real Time data:
+    <br>
+    <table style="width:100%">
+      <tr>
+        <th>Data</th>
+        <th>Value</th>
+
+      </tr>
+      <tr>
+        <td>Sin</td>
+        <td id="SinSlot">0</td>
+      </tr>
+      <tr>
+        <td>Cos</td>
+        <td id="CosSlot">0</td>
+      </tr>
+      <tr>
+        <td>McuTime</td>
+        <td id="TimeSlot2">0</td>
+      </tr>
+    </table>
+
+    <canvas id="plotCanvas" style="width:100%;max-width:600px"></canvas>
+    </div>
+  </div>
+
+<img src="img/pikaavatar.png" alt="Pozdrawiam" style="float: left">
+<img src="img/pikaavatar.png" alt="Pozdrawiam" style="float: right">
+
+<h2> Youtube: </h2>
+<h2> <a href="https://www.youtube.com/@teodorros9310" target=blank> https://www.youtube.com/@teodorros9310 </a> </h2>
+<h2> Github: </h2>
+<h2> <a href="https://github.com/trteodor" target=blank>  https://github.com/trteodor </a> </h2>
+</body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+
+<script>
+/*******************************************/
+  var iterX = 0
+  xArray = [];
+  ySinArray = [];
+  yCosArray = [];
+/*******************************************/
+function updatePlotWithAjax(){
+  const ajaxXMLreq = new XMLHttpRequest();
+  ajaxXMLreq.onload = function() {
+
+    var aux = this.responseText;
+    aux = aux.split(',').map(Number);
+    //console.log(aux)
+    aux.shift();
+    document.getElementById("SinSlot").innerHTML  = aux[0];
+    document.getElementById("CosSlot").innerHTML  = aux[1];
+    document.getElementById("TimeSlot1").innerHTML = aux[2];
+    document.getElementById("TimeSlot2").innerHTML = aux[2];
+
+    ySinArray.push(aux[0]);
+    if(ySinArray.length > 50)
+    {
+      ySinArray.shift();
+    }
+
+    yCosArray.push(aux[1]);
+    if(yCosArray.length > 50)
+    {
+      yCosArray.shift();
+    }
+
+    iterX = iterX + 1;
+    xArray.push(iterX);
+    if(xArray.length > 50)
+    {
+      xArray.shift();
+    }
+
+    new Chart("plotCanvas", {
+      type: "line",
+      data: {
+        labels: xArray,
+        datasets: [{ 
+          data: ySinArray,
+          backgroundColor: "rgba(0,0,255,1.0)", borderColor: "rgba(0,0,255,0.1)",
+          fill: false,
+          label: "Sin"
+        }, {
+          data: yCosArray,
+          borderColor: "red",
+          fill: false,
+          label: "Cos"
+        }]
+      },
+      options: {
+        legend: {display: true},
+        animation: false
+      }
+    });
+  }
+
+  ajaxXMLreq.open("GET", "ajax.shtml");
+  ajaxXMLreq.send();
+
+  idTimer2 = setTimeout("updatePlotWithAjax()", 70);
+}
+
+</script>
+
+
+</html>
